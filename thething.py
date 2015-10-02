@@ -25,3 +25,10 @@ for recipe in data:
 pprint(ingredientsMatrix)
 cam=np.matrix(cuisinesArray)
 cam.transpose()
+#def eval_measure(y1, y2):
+#    return (y1 == y2).mean()
+#split = 0.8*X.shape[0]
+#clf = tree.DecisionTreeClassifier()
+#clf.fit(X[:split], Y[:split])
+#y_pred = clf.predict(X[split:])
+#eval_measure(y_pred, Y[split:])
