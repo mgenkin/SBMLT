@@ -2,6 +2,9 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 import sklearn
+import collections
+import string
+import re
 
 def load_data():
 	# return a list of recipes (dict) with lists of ingredients under 'ingredients' and id's
@@ -12,7 +15,57 @@ def load_data():
 
 	return train_set, test_set
 
+def strclean(str_in):
+	if len(str_in)<3:
+		return str_in
+	str_in = re.sub(r'[^\sa-zA-Z]', '', str_in).lower().strip()
+	if str_in[-1] != 's':
+		return str_in
+	str_in = str_in.rstrip('s')
+	if str_in[-1] != 'e':
+		return str_in
+	if str_in[-1] == 'e' and str_in[-2]!='i':
+		return str_in
+	str_in = str_in.rstrip('e')
+	str_in = str_in.rstrip('i')
+	str_in = str_in+'y'
+	return str_in
 
+def CleanData(data):
+	# Cleaning all the data and collecting one word ingredients
+	
+	#to see an example of how it works,  uncomment the print statements
+	#print data[0]["ingredients"]
+	for recipe in data:
+		for item in recipe['ingredients']:
+			item = strclean(item)
+			if ' ' not in item:
+				singles.append(item)
+			cleaned.append(item)
+		recipe.update({'ingredients':cleaned})
+		cleaned=[]
+	
+	#sorting by frequency and removing repititions
+	count = collections.Counter(singles)
+	singles = sorted(count,key=count.get,reverse=True)
+	
+	#mapping all multi-word ingredients to one word ingredients
+	for recipe in data:
+		for item in recipe['ingredients']:
+			if ' ' in item:
+				words = item.split()
+				frequency=len(singles)-1
+				for word in words:
+					if word in singles:
+						if frequency>singles.index(word):
+							frequency=singles.index(word)
+				item = singles[frequency]
+			cleaned.append(item)
+		recipe.update({'ingredients':cleaned})
+		cleaned = []
+	#print data[0]["ingredients"]
+	return data
+	
 class Data_mapper():
 	# maps data to arrays, stores data mapping in cuisine_dict and ingredients_dict
 	def __init__(self):
