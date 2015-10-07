@@ -33,7 +33,8 @@ def strclean(str_in):
 
 def CleanData(data):
 	# Cleaning all the data and collecting one word ingredients
-	
+	cleaned = []
+	singles = []
 	#to see an example of how it works,  uncomment the print statements
 	#print data[0]["ingredients"]
     cleaned = []
