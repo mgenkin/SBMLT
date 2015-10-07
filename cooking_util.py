@@ -36,6 +36,8 @@ def CleanData(data):
 	
 	#to see an example of how it works,  uncomment the print statements
 	#print data[0]["ingredients"]
+    cleaned = []
+    singles = []
 	for recipe in data:
 		for item in recipe['ingredients']:
 			item = strclean(item)
