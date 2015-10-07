@@ -31,13 +31,13 @@ def strclean(str_in):
 	str_in = str_in+'y'
 	return str_in
 
-def CleanData(data):
+def CleanData(train,test):
 	# Cleaning all the data and collecting one word ingredients
 	cleaned = []
 	singles = []
 	#to see an example of how it works,  uncomment the print statements
 	#print data[0]["ingredients"]
-	for recipe in data:
+	for recipe in train:
 		for item in recipe['ingredients']:
 			item = strclean(item)
 			if ' ' not in item:
@@ -51,7 +51,21 @@ def CleanData(data):
 	singles = sorted(count,key=count.get,reverse=True)
 	
 	#mapping all multi-word ingredients to one word ingredients
-	for recipe in data:
+	for recipe in train:
+		for item in recipe['ingredients']:
+			if ' ' in item:
+				words = item.split()
+				frequency=len(singles)-1
+				for word in words:
+					if word in singles:
+						if frequency>singles.index(word):
+							frequency=singles.index(word)
+				item = singles[frequency]
+			cleaned.append(item)
+		recipe.update({'ingredients':cleaned})
+		cleaned = []
+
+	for recipe in test:
 		for item in recipe['ingredients']:
 			if ' ' in item:
 				words = item.split()
@@ -65,7 +79,7 @@ def CleanData(data):
 		recipe.update({'ingredients':cleaned})
 		cleaned = []
 	#print data[0]["ingredients"]
-	return data
+	return train,test
 	
 class Data_mapper():
 	# maps data to arrays, stores data mapping in cuisine_dict and ingredients_dict
