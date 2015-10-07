@@ -37,8 +37,6 @@ def CleanData(data):
 	singles = []
 	#to see an example of how it works,  uncomment the print statements
 	#print data[0]["ingredients"]
-    cleaned = []
-    singles = []
 	for recipe in data:
 		for item in recipe['ingredients']:
 			item = strclean(item)
@@ -78,7 +76,7 @@ class Data_mapper():
 		pass
 
 	def get_dicts(self):
-		return self.ingredients_dict, self.cuisines_dict
+		return self.ingredients_dict, self.cuisine_dict
 
 	def make_train_arrays(self, data):
 		# take an array of data in the dictionary-list format and turn it into X and y 
@@ -124,5 +122,17 @@ class Data_mapper():
 					X_test[i, self.ingredients_dict[ingredient]] = 1
 				else:
 					continue
+
+	def make_test_vector(self, recipe):
+		if not self.initialized:
+			raise Exception("no ingredient dictionary stored, please map training data first.")
+
+		X_test = np.zeros(len(self.ingredients_dict))
+
+		for ingredient in recipe['ingredients']:
+			if ingredient in self.ingredients_dict:
+				X_test[self.ingredients_dict[ingredient]] = 1
+			else:
+				continue
 
 		return X_test
