@@ -13,3 +13,22 @@
 * "input” folder : Any files downloaded directly from the problem statement goes here. Never directly modify the files.
 
 * "output” folder : Any files written as an output goes here.
+
+##Logics
+###Data Cleaning###
+* Map to most used one-word ingredients
+* Match obvious ingredient to cuisine pairs
+
+###Feature Extraction###
+* Map to most used one-word ingredients
+* Clustering : k-means
+* Clustering : latent feature model (Which algorithm?)
+
+###Learning Algorithms###
+* Decision tree (one vs all)
+* Decision tree (multi-label)
+* Logistic regression (one vs all)
+* Random forest
+
+###Other###
+* Bagging (Combining results of different models)
