@@ -80,6 +80,33 @@ def CleanData(train,test):
 		cleaned = []
 	#print data[0]["ingredients"]
 	return train,test
+
+def clean_data_bow(train, test, min_recipes=50):
+	train_bow, test_bow, all_words = [], [], {}
+
+	for recipe in train:
+		for item in recipe['ingredients']:
+			words_in_item = [strclean(w) for w in item.split()]
+			for word in words_in_item:
+				if word in all_words:
+					all_words[word]+=1
+				else:
+					all_words[word]=1
+
+	for word in all_words:
+		if all_words[word] <= min_recipes:
+			all_words.pop(word)
+
+	for recipe in train:
+		cleaned = []
+		for item in recipe['ingredients']:
+			words = [strclean(w) for w in item.split()]
+			for word in words:
+				if word in all_words.keys():
+					cleaned.append(word)
+		recipe.update({'ingredients':cleaned})
+
+	return train
 	
 class Data_mapper():
 	# maps data to arrays, stores data mapping in cuisine_dict and ingredients_dict
