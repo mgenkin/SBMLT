@@ -5,6 +5,7 @@ import sklearn
 import collections
 import string
 import re
+import csv
 
 def load_data():
 	# return a list of recipes (dict) with lists of ingredients under 'ingredients' and id's
@@ -16,12 +17,13 @@ def load_data():
 	return train_set, test_set
 
 def strclean(str_in):
-	str_in = re.sub(r'[^\sa-zA-Z]', '', str_in).lower().strip()
-	if len(str_in)<=3:
+	str_in = re.sub(r'[^\sa-zA-Z]', '', str_in).lower().strip() #trim non-letters, spaces, and make it lowercase
+	if len(str_in)<=3: #too short to care about
 		return str_in
-	if str_in[-1] != 's':
+	#the rest of this is to fix plurals
+	if str_in[-1] != 's': # not a plural, so we don't care
 		return str_in
-	str_in = str_in.rstrip('s')
+	str_in = str_in.rstrip('s') # remove 's' or 'es', change ending 'i' to 'y'
 	if str_in[-1] != 'e':
 		return str_in
 	if str_in[-1] == 'e' and str_in[-2]!='i':
@@ -82,21 +84,27 @@ def CleanData(train,test):
 	return train,test
 
 def clean_data_bow(train, test, min_recipes=50):
+	# segments words in ingredients into separate ingredients
+	# for example "wheat bread" becomes 2 ingredients: "wheat" and "bread"
+	# considers only words which appear in more than min_recipes recipes
 	train_bow, test_bow, all_words = [], [], {}
-
+	
+	# all_words stores word frequency
+	# train_bow and test_bow will be output
 	for recipe in train:
 		for item in recipe['ingredients']:
-			words_in_item = [strclean(w) for w in item.split()]
+			words_in_item = [strclean(w) for w in item.split()] # split into words and clean each word
 			for word in words_in_item:
 				if word in all_words:
-					all_words[word]+=1
+					all_words[word]+=1 # add to word frequency
 				else:
-					all_words[word]=1
+					all_words[word]=1 # occurs in one recipe
 
-	for word in all_words.keys():
+	for word in all_words.keys(): # remove rare words
 		if all_words[word] <= min_recipes:
 			all_words.pop(word)
 
+	# 
 	for recipe in train:
 		cleaned = []
 		for item in recipe['ingredients']:
@@ -119,27 +127,28 @@ def clean_data_bow(train, test, min_recipes=50):
 	
 class Data_mapper():
 	# maps data to arrays, stores data mapping in cuisine_dict and ingredients_dict
+	# ingredients_dict maps ingredient to its column number
+	# cuisine_dict maps cuisine to a number
 	def __init__(self):
-		self.initialized = False
+		self.initialized = False # indicates whether ingredients_dict, cuisine_dict exist
 		self.ingredients_dict = None
 		self.cuisine_dict = None
-		pass
 
 	def get_dicts(self):
 		return self.ingredients_dict, self.cuisine_dict
 
 	def make_train_arrays(self, data):
 		# take an array of data in the dictionary-list format and turn it into X and y 
-		if not self.initialized: # no stored dictionaries yet
+		if not self.initialized: # no stored dictionaries yet, so we need to make them
 			ing_ctr = 0
 			cuis_ctr = 0
 			ingredients_dict = {}
 			cuisines_dict = {}
 			for recipe in data:
 			    for ingredient in recipe['ingredients']:
-			        if ingredient not in ingredients_dict:
-			            ingredients_dict[ingredient] = ing_ctr
-			            ing_ctr += 1
+			        if ingredient not in ingredients_dict: # haven't seen this one yet
+			            ingredients_dict[ingredient] = ing_ctr # add it to the dictionary
+			            ing_ctr += 1 # increment counter for next ingredient
 			    if recipe['cuisine'] not in cuisines_dict:
 			        cuisines_dict[recipe['cuisine']] = cuis_ctr
 			        cuis_ctr += 1
@@ -154,8 +163,8 @@ class Data_mapper():
 			recipe = data[i]
 			cuisine = recipe['cuisine']
 			y_train[i] = cuisines_dict[cuisine]
-			for ingredient in recipe['ingredients']:
-				X_train[i, ingredients_dict[ingredient]] = 1
+			for ingredient in recipe['ingredients']: 
+				X_train[i, ingredients_dict[ingredient]] = 1 # place a 1 in the appropriate slot
 
 		return X_train, y_train
 
@@ -173,14 +182,16 @@ class Data_mapper():
 				continue
 		return X_test
 
-def submit(submission_func, test_set, filename='sub.csv'):
-	# takes your submission function and makes a kaggle-style submission csv file out of it
+def submit(classifier, test_set, dm, filename='sub.csv'):
+	# takes your classifier and makes a kaggle-style submission csv file out of it
 	# Your submission function should take an element of your test set and return the predicted cuisine (string).
-	# It's up to you to be consistent with your training data-map.
-	# The elements of your test set should be dictionaries that contain an id element
+	# Pass in your datamapper instance as dm
 	with open(filename, 'wb') as csvfile:
 		w = csv.DictWriter(csvfile, ["id", "cuisine"])
 		w.writeheader()
+		_, cuis_dict = dm.get_dicts()
+		cuis_dict_rev = {v: k for k, v in cuis_dict.items()}
 		for recipe in test_set:
-			pred = submission_func(recipe)
-			w.writerow({"id":recipe["id"], "cuisine":pred})
+			recipe_vector = dm.make_test_vector(recipe)
+			pred = classifier(recipe_vector)[0]
+			w.writerow({"id":recipe["id"], "cuisine":cuis_dict_rev[pred]})
