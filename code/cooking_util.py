@@ -16,9 +16,9 @@ def load_data():
 	return train_set, test_set
 
 def strclean(str_in):
-	if len(str_in)<3:
-		return str_in
 	str_in = re.sub(r'[^\sa-zA-Z]', '', str_in).lower().strip()
+	if len(str_in)<=3:
+		return str_in
 	if str_in[-1] != 's':
 		return str_in
 	str_in = str_in.rstrip('s')
@@ -93,7 +93,7 @@ def clean_data_bow(train, test, min_recipes=50):
 				else:
 					all_words[word]=1
 
-	for word in all_words:
+	for word in all_words.keys():
 		if all_words[word] <= min_recipes:
 			all_words.pop(word)
 
@@ -106,7 +106,16 @@ def clean_data_bow(train, test, min_recipes=50):
 					cleaned.append(word)
 		recipe.update({'ingredients':cleaned})
 
-	return train
+	for recipe in test:
+		cleaned = []
+		for item in recipe['ingredients']:
+			words = [strclean(w) for w in item.split()]
+			for word in words:
+				if word in all_words.keys():
+					cleaned.append(word)
+		recipe.update({'ingredients':cleaned})
+
+	return train, test
 	
 class Data_mapper():
 	# maps data to arrays, stores data mapping in cuisine_dict and ingredients_dict
@@ -121,7 +130,7 @@ class Data_mapper():
 
 	def make_train_arrays(self, data):
 		# take an array of data in the dictionary-list format and turn it into X and y 
-		if not self.initialized:
+		if not self.initialized: # no stored dictionaries yet
 			ing_ctr = 0
 			cuis_ctr = 0
 			ingredients_dict = {}
@@ -150,30 +159,28 @@ class Data_mapper():
 
 		return X_train, y_train
 
-	def make_test_array(self, data):
-		if not self.initialized:
-			raise Exception("no ingredient dictionary stored, please map training data first.")
-
-		X_test = np.zeros((len(data),len(self.ingredients_dict)))
-
-		for i in xrange(len(data)):
-			recipe = data[i]
-			for ingredient in recipe['ingredients']:
-				if ingredient in self.ingredients_dict:
-					X_test[i, self.ingredients_dict[ingredient]] = 1
-				else:
-					continue
-
 	def make_test_vector(self, recipe):
+		# maps a single recipe to its vector representation
+		
 		if not self.initialized:
 			raise Exception("no ingredient dictionary stored, please map training data first.")
 
 		X_test = np.zeros(len(self.ingredients_dict))
-
 		for ingredient in recipe['ingredients']:
 			if ingredient in self.ingredients_dict:
 				X_test[self.ingredients_dict[ingredient]] = 1
 			else:
 				continue
-
 		return X_test
+
+def submit(submission_func, test_set, filename='sub.csv'):
+	# takes your submission function and makes a kaggle-style submission csv file out of it
+	# Your submission function should take an element of your test set and return the predicted cuisine (string).
+	# It's up to you to be consistent with your training data-map.
+	# The elements of your test set should be dictionaries that contain an id element
+	with open(filename, 'wb') as csvfile:
+		w = csv.DictWriter(csvfile, ["id", "cuisine"])
+		w.writeheader()
+		for recipe in test_set:
+			pred = submission_func(recipe)
+			w.writerow({"id":recipe["id"], "cuisine":pred})
