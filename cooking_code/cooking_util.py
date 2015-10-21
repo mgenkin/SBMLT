@@ -124,6 +124,58 @@ def clean_data_bow(train, test, min_recipes=50):
 		recipe.update({'ingredients':cleaned})
 
 	return train, test
+
+def clean_data_bow_mult(train, test, min_recipes=50):
+	# expansion of the bag of words method to include multi-words
+	# now, "wheat bread" becomes "wheat", "bread", and "wheat bread"
+	train_bow, test_bow, all_words = [], [], {}
+	
+	def all_permutations(wordlist):
+		if len(wordlist) == 1:
+			return wordlist
+		else:
+			l = len(wordlist)
+			outlist = []
+			for i in range(l):
+			 	for j in range(i+1, l+1):
+ 					outlist.append(' '.join(wordlist[i:j]))
+ 		return outlist
+
+	# all_words stores word frequency
+	# train_bow and test_bow will be output
+	for recipe in train:
+		for item in recipe['ingredients']:
+			words_in_item = [strclean(w) for w in item.split()] # split into words and clean each word
+			for word in all_permutations(words_in_item):
+				if word in all_words:
+					all_words[word]+=1 # add to word frequency
+				else:
+					all_words[word]=1 # occurs in one recipe
+
+	for word in all_words.keys(): # remove rare words
+		if all_words[word] <= min_recipes:
+			all_words.pop(word)
+
+	# 
+	for recipe in train:
+		cleaned = []
+		for item in recipe['ingredients']:
+			words = [strclean(w) for w in item.split()]
+			for word in all_permutations(words):
+				if word in all_words.keys():
+					cleaned.append(word)
+		recipe.update({'ingredients':cleaned})
+
+	for recipe in test:
+		cleaned = []
+		for item in recipe['ingredients']:
+			words = [strclean(w) for w in item.split()]
+			for word in all_permutations(words):
+				if word in all_words.keys():
+					cleaned.append(word)
+		recipe.update({'ingredients':cleaned})
+
+	return train, test
 	
 class Data_mapper():
 	# maps data to arrays, stores data mapping in cuisine_dict and ingredients_dict
