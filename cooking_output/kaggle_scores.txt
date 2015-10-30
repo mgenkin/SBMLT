@@ -1,0 +1,8 @@
+Accuracies reported by Kaggle:
+
+sub_log.csv:          0.66744
+sub_log_bow.csv:      0.77514
+sub_rf.csv:           0.65487
+sub_rf_bow.csv:       0.76126
+sub_log_bow_mult.csv: 0.77926
+sub_rf_bow_mult.csv:  0.75674
